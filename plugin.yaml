@@ -1,0 +1,10 @@
+name: "rename"
+version: "0.0.1"
+usage: "rename a release"
+description: |-
+  rename a release.
+ignoreFlags: false
+useTunnel: true
+command: "$HELM_PLUGIN_DIR/helm-rename"
+# hooks:
+#   install: "$HELM_PLUGIN_DIR/install.sh"
