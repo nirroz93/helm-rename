@@ -18,18 +18,15 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/kube"
 	"helm.sh/helm/v3/pkg/release"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/cli-runtime/pkg/resource"
 )
 
@@ -109,13 +106,11 @@ func (renameOptions *RenameOptions) Rename() error {
 	if renameOptions.MigrateResources {
 		log.Printf("Annotating release resources of \"%s\" with annotation \"meta.helm.sh/release-name: %s\".\n", renameOptions.OldReleaseName, renameOptions.NewReleaseName)
 		if !renameOptions.DryRun {
-			// This is basically setMetadataVisitor (I couldn't find it in the package)
-
 			target, err := renameOptions.cfg.KubeClient.Build(bytes.NewBufferString(oldReleaseObject.Manifest), false)
 			if err != nil {
 				return err
 			}
-			err = target.Visit(setMetadataVisitor(*renameOptions))
+			err = target.Visit(setOwnerAnnotationVisitor(*renameOptions))
 			if err != nil {
 				log.Printf("Deleting release")
 				return err
@@ -172,57 +167,21 @@ func DeleteRelease(renameOptions RenameOptions, releaseObject *release.Release) 
 	return nil
 }
 
-// This is a short version of the function in helm validate.go taken from here https://github.com/helm/helm/blob/a499b4b179307c267bdf3ec49b880e3dbd2a5591/pkg/action/validate.go#L115
-// And removed unnecessary parts
-func setMetadataVisitor(renameOptions RenameOptions) resource.VisitorFunc {
+func setOwnerAnnotationVisitor(renameOptions RenameOptions) resource.VisitorFunc {
 	releaseName := renameOptions.NewReleaseName
 	return func(info *resource.Info, err error) error {
 		if err != nil {
 			return err
 		}
-		oldData, err := json.Marshal(info.Object)
-		if err != nil {
-			return err
-		}
-		accessor := meta.NewAccessor()
-		annotations, err := accessor.Annotations(info.Object)
-		if err != nil {
-			return err
-		}
-		if err := accessor.SetAnnotations(info.Object, mergeStrStrMaps(annotations, map[string]string{"meta.helm.sh/release-name": releaseName})); err != nil {
-			return err
-		}
-		newData, err := json.Marshal(info.Object)
-		if err != nil {
-			return err
-		}
-		versionedObject := kube.AsVersioned(info)
-		patchMeta, err := strategicpatch.NewPatchMetaFromStruct(versionedObject)
-		if err != nil {
-			return err
-		}
-		patch, err := strategicpatch.CreateTwoWayMergePatchUsingLookupPatchMeta(oldData, newData, patchMeta)
-		if err != nil {
-			return err
-		}
+
+		patch := fmt.Sprintf("{\"metadata\":{\"annotations\":{\"meta.helm.sh/release-name\":\"%s\"}}}", releaseName)
 		log.Printf("Patching \"%s/%s\" with annotation meta.helm.sh/release-name=%s", info.Mapping.GroupVersionKind.Kind, info.Name, releaseName)
 		helper := resource.NewHelper(info.Client, info.Mapping)
-		obj, err := helper.Patch(info.Namespace, info.Name, types.StrategicMergePatchType, patch, nil)
+		obj, err := helper.Patch(info.Namespace, info.Name, types.StrategicMergePatchType, []byte(patch), nil)
 		if err != nil {
 			return errors.Wrapf(err, "cannot patch %q with kind %s", info.Name, info.Mapping.GroupVersionKind.Kind)
 		}
 		info.Refresh(obj, true)
 		return nil
 	}
-}
-
-func mergeStrStrMaps(current, desired map[string]string) map[string]string {
-	result := make(map[string]string)
-	for k, v := range current {
-		result[k] = v
-	}
-	for k, desiredVal := range desired {
-		result[k] = desiredVal
-	}
-	return result
 }
