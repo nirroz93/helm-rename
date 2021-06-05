@@ -6,5 +6,6 @@ description: |-
 ignoreFlags: false
 useTunnel: true
 command: "$HELM_PLUGIN_DIR/helm-rename"
-# hooks:
-#   install: "$HELM_PLUGIN_DIR/install.sh"
+hooks:
+  install: "cd $HELM_PLUGIN_DIR; scripts/install_plugin.sh"
+  update: "cd $HELM_PLUGIN_DIR; scripts/install_plugin.sh"
