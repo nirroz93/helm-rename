@@ -17,10 +17,13 @@ limitations under the License.
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"io"
 	"log"
+	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -55,6 +58,7 @@ func newRenameCmd(cfg *action.Configuration, out io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rename [flags] RELEASE",
 		Short: "Renames a release",
+		Long:  renameHelp,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 2 {
 				return errors.New("This command needs 2 arguments: old release name and new release name")
@@ -72,11 +76,11 @@ func newRenameCmd(cfg *action.Configuration, out io.Writer) *cobra.Command {
 
 	flags := cmd.Flags()
 
-	flags.BoolVar(&rename.MigrateSecrets, "migrate-secrets", true, "")
-	flags.BoolVar(&rename.MigrateResources, "migrate-resouces", true, "")
-	flags.BoolVar(&rename.CheckNameOverride, "check-nameoverride-value", false, "")
-	flags.BoolVar(&rename.YesToAll, "yes", true, "")
-	flags.BoolVar(&rename.DryRun, "dry-run", true, "")
+	flags.BoolVar(&rename.MigrateSecrets, "migrate-secrets", true, "Migrate helm releases to new names (otherwise migrate only resources)")
+	flags.BoolVar(&rename.MigrateResources, "migrate-resources", true, "Annotate existis objects created by the release with owenership annotation of the new release name")
+	// flags.BoolVar(&rename.CheckNameOverride, "check-nameoverride-value", false, "") // TODO
+	flags.BoolVar(&rename.YesToAll, "yes", false, "Quiet mode, answer yes to any verification (existing release for newName for now")
+	flags.BoolVar(&rename.DryRun, "dry-run", true, "Dry run, only print actions that will be taken, don't actually do them")
 
 	return cmd
 
@@ -96,21 +100,31 @@ func (renameOptions *RenameOptions) Rename() error {
 	// getRelease.Version = 0
 	oldReleaseObject, err := getRelease.Run(renameOptions.OldReleaseName)
 	if err != nil {
-		log.Printf("Error: Release \"%s\" doesn't exist", renameOptions.OldReleaseName)
-		return err
+		return errors.Wrapf(err, "Error: Release \"%s\" doesn't exist", renameOptions.OldReleaseName)
 	}
 
 	_, err = getRelease.Run(renameOptions.NewReleaseName)
-	if err == nil { // Refactor: Prompt verification
-		log.Printf("Error: Release with name \"%s\" already exist", renameOptions.NewReleaseName)
-		return err
+	if err == nil {
+		log.Printf("Release with name \"%s\" already exist. Do you want to continue with the operation? Note: THIS IS UNTESTED YET, make sure the revision of old release don't exist for the new release [y/N]", renameOptions.NewReleaseName)
+		if !renameOptions.YesToAll && !renameOptions.DryRun {
+			scanner := bufio.NewScanner(os.Stdin)
+			scanner.Scan()
+			if err := scanner.Err(); err != nil {
+				return errors.Wrap(err, "Couldn't read from standard input")
+			}
+			answer := scanner.Text()
+			if strings.ToLower(answer) != "y" && strings.ToLower(answer) != "yes" {
+				return errors.Wrapf(err, "Release with name \"%s\" already exist", renameOptions.NewReleaseName)
+			}
+		}
+		// TODO: Set start version if existing release version>current version
 	}
+
+	//TODO: add check for fullNameOverride/Usage of Release.Name in the chart.
 
 	if renameOptions.MigrateResources {
 		log.Printf("Annotating release resources of \"%s\" with annotation \"meta.helm.sh/release-name: %s\".\n", renameOptions.OldReleaseName, renameOptions.NewReleaseName)
 		if !renameOptions.DryRun {
-			// This is basically setMetadataVisitor (I couldn't find it in the package)
-
 			target, err := renameOptions.cfg.KubeClient.Build(bytes.NewBufferString(oldReleaseObject.Manifest), false)
 			if err != nil {
 				return err
