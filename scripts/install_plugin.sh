@@ -41,4 +41,3 @@ mv "releases/v${version}/rename" "bin/rename" || \
 mv "releases/v${version}/completion.yaml" .
 mv "releases/v${version}/plugin.yaml" .
 mv "releases/v${version}/README.md" .
-mv "releases/v${version}/LICENSE" .
