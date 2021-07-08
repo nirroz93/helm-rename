@@ -52,7 +52,7 @@ jobs:
       - run:
           command: |
             helm upgrade foo ./foo -i
-            helm rename foo bar
+            helm rename foo bar || echo $?
             helm list | grep bar
 
           working_directory: test
