@@ -77,7 +77,7 @@ func newRenameCmd(cfg *action.Configuration, out io.Writer) *cobra.Command {
 	flags.BoolVar(&rename.MigrateResources, "migrate-resources", true, "Annotate existis objects created by the release with owenership annotation of the new release name")
 	// flags.BoolVar(&rename.CheckNameOverride, "check-nameoverride-value", false, "") // TODO
 	flags.BoolVar(&rename.YesToAll, "yes", false, "Quiet mode, answer yes to any verification (existing release for newName for now")
-	flags.BoolVar(&rename.DryRun, "dry-run", true, "Dry run, only print actions that will be taken, don't actually do them")
+	flags.BoolVar(&rename.DryRun, "dry-run", false, "Dry run, only print actions that will be taken, don't actually do them")
 
 	return cmd
 

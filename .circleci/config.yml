@@ -51,9 +51,9 @@ jobs:
       - run:
           command: |
             helm upgrade foo ./foo -i
-            helm rename foo bar 
+            helm rename foo bar  --dry-run
             helm list | grep foo
-            helm rename foo bar --dry-run=true
+            helm rename foo bar
             helm list | grep bar
             helm upgrade bar ./foo --set nameOverride=foo --debug
 
