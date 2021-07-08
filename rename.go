@@ -128,7 +128,7 @@ func (renameOptions *RenameOptions) Rename() error {
 			}
 			err = target.Visit(setOwnerAnnotationVisitor(*renameOptions))
 			if err != nil {
-				log.Printf("Deleting release")
+				log.Printf("Annotating object failed")
 				return err
 			}
 
@@ -187,7 +187,10 @@ func DeleteRelease(renameOptions RenameOptions, releaseObject *release.Release) 
 	log.Printf("Deleting release \"%s\" version %d.\n", renameOptions.OldReleaseName, releaseObject.Version)
 	if !renameOptions.DryRun {
 		_, err := renameOptions.cfg.Releases.Delete(releaseObject.Name, releaseObject.Version)
-		return err
+		if err != nil {
+			log.Printf("Deleting release failed")
+			return err
+		}
 	}
 	return nil
 }
