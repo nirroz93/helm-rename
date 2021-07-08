@@ -38,8 +38,7 @@ jobs:
           wget -O kubectl https://storage.googleapis.com/kubernetes-release/release/v1.21.1/bin/linux/amd64/kubectl
           chmod +x kubectl
       - run: |
-          wget https://get.helm.sh/helm-v3.6.1-linux-amd64.tar.gz
-          tar -xzf helm-v3.6.1-linux-amd64.tar.gz --strip-components 1 linux-amd64/helm
+          curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
       - run: |
           mkdir /tmp/go
       - attach_workspace:
@@ -52,8 +51,11 @@ jobs:
       - run:
           command: |
             helm upgrade foo ./foo -i
+            helm rename foo bar  --dry-run
+            helm list | grep foo
             helm rename foo bar
             helm list | grep bar
+            helm upgrade bar ./foo --set nameOverride=foo --debug
 
           working_directory: test
   deploy:
