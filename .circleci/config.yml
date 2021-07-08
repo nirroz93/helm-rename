@@ -49,6 +49,7 @@ jobs:
           cp /tmp/go/bin/helm-rename $HOME/.local/share/helm/plugins/helm-rename/helm-rename
 
       - run:
+          no_output_timeout: 30m
           command: |
             helm upgrade foo ./foo -i
             helm rename foo bar  --dry-run
