@@ -77,7 +77,7 @@ func newRenameCmd(cfg *action.Configuration, out io.Writer) *cobra.Command {
 	flags.BoolVar(&rename.MigrateResources, "migrate-resources", true, "Annotate existis objects created by the release with owenership annotation of the new release name")
 	// flags.BoolVar(&rename.CheckNameOverride, "check-nameoverride-value", false, "") // TODO
 	flags.BoolVar(&rename.YesToAll, "yes", false, "Quiet mode, answer yes to any verification (existing release for newName for now")
-	flags.BoolVar(&rename.DryRun, "dry-run", true, "Dry run, only print actions that will be taken, don't actually do them")
+	flags.BoolVar(&rename.DryRun, "dry-run", false, "Dry run, only print actions that will be taken, don't actually do them")
 
 	return cmd
 
@@ -128,7 +128,7 @@ func (renameOptions *RenameOptions) Rename() error {
 			}
 			err = target.Visit(setOwnerAnnotationVisitor(*renameOptions))
 			if err != nil {
-				log.Printf("Deleting release")
+				log.Printf("Annotating object failed")
 				return err
 			}
 
@@ -187,7 +187,10 @@ func DeleteRelease(renameOptions RenameOptions, releaseObject *release.Release) 
 	log.Printf("Deleting release \"%s\" version %d.\n", renameOptions.OldReleaseName, releaseObject.Version)
 	if !renameOptions.DryRun {
 		_, err := renameOptions.cfg.Releases.Delete(releaseObject.Name, releaseObject.Version)
-		return err
+		if err != nil {
+			log.Printf("Deleting release failed")
+			return err
+		}
 	}
 	return nil
 }
