@@ -7,20 +7,20 @@ fi
 
 # shellcheck disable=SC2002
 version="$(cat plugin.yaml | grep "version" | cut -d '"' -f 2)"
-echo "Downloading and installing helm-edit v${version} ..."
+echo "Downloading and installing helm-rename v${version} ..."
 
 url=""
 if [ "$(uname)" = "Darwin" ]; then
     if [ "$(uname -m)" = "arm64" ]; then
-        url="https://github.com/nirroz93/helm-edit/releases/download/v${version}/helm-edit_${version}_darwin_arm64.tar.gz"
+        url="https://github.com/nirroz93/helm-rename/releases/download/v${version}/helm-rename_${version}_darwin_arm64.tar.gz"
     else
-        url="https://github.com/nirroz93/helm-edit/releases/download/v${version}/helm-edit_${version}_darwin_amd64.tar.gz"
+        url="https://github.com/nirroz93/helm-rename/releases/download/v${version}/helm-rename_${version}_darwin_amd64.tar.gz"
     fi
 elif [ "$(uname)" = "Linux" ] ; then
     if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then
-        url="https://github.com/nirroz93/helm-edit/releases/download/v${version}/helm-edit_${version}_linux_arm64.tar.gz"
+        url="https://github.com/nirroz93/helm-rename/releases/download/v${version}/helm-rename_${version}_linux_arm64.tar.gz"
     else
-        url="https://github.com/nirroz93/helm-edit/releases/download/v${version}/helm-edit_${version}_linux_amd64.tar.gz"
+        url="https://github.com/nirroz93/helm-rename/releases/download/v${version}/helm-rename_${version}_linux_amd64.tar.gz"
     fi
 fi
 

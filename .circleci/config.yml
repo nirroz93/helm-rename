@@ -1,0 +1,82 @@
+version: 2
+jobs:
+  install:
+    docker:
+      - image: circleci/golang:1.16
+    steps:
+      - checkout
+      - run: go mod download
+
+      - run: go install
+      - persist_to_workspace:
+          root: /go
+          paths:
+            - "bin/helm-rename"
+  lint:
+    docker:
+      - image: golangci/golangci-lint
+    steps:
+      - checkout
+      - run:
+          name: lint
+          command: golangci-lint run --timeout 5m
+    
+  test:
+    machine: true
+    steps:
+      - checkout
+      - run: |
+          echo "export PATH=\"$CIRCLE_WORKING_DIRECTORY:\$PATH\"" >> $BASH_ENV
+
+      - run: docker info
+
+      - run: |
+          wget -O kind https://github.com/kubernetes-sigs/kind/releases/download/v0.11.1/kind-linux-amd64
+          chmod +x kind
+      - run: kind create cluster --image kindest/node:v1.21.1
+      - run: |
+          wget -O kubectl https://storage.googleapis.com/kubernetes-release/release/v1.21.1/bin/linux/amd64/kubectl
+          chmod +x kubectl
+      - run: |
+          wget https://get.helm.sh/helm-v3.6.1-linux-amd64.tar.gz
+          tar -xzf helm-v3.6.1-linux-amd64.tar.gz --strip-components 1 linux-amd64/helm
+      - run: |
+          mkdir /tmp/go
+      - attach_workspace:
+          at: /tmp/go
+      - run: |
+          mkdir -p $HOME/.local/share/helm/plugins/helm-rename
+          cp plugin.yaml $HOME/.local/share/helm/plugins/helm-rename/
+          cp /tmp/go/bin/helm-rename $HOME/.local/share/helm/plugins/helm-rename/helm-rename
+
+      - run:
+          command: |
+            helm upgrade foo ./foo -i
+            helm rename foo bar
+            helm list | grep bar
+
+          working_directory: test
+  deploy:
+    docker:
+      - image: circleci/golang:1.16
+    working_directory: /go/src/github.com/nirroz93/helm-rename
+    steps:
+      - checkout
+      - run: curl -sL https://raw.githubusercontent.com/goreleaser/get/master/get | VERSION=v0.170.0 bash
+workflows:
+  version: 2
+  untagged-build:
+    jobs:
+      - install
+      - lint
+      - test:
+          requires:
+            - install
+  tagged-build:
+    jobs:
+      - deploy:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/

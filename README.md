@@ -30,6 +30,6 @@ Renaming a release is very dangerous, yet very useful. As said before, this is v
  I don't really write in Golang, so:
  - Be careful using it
  - if you happen to open the code and see something that I did like an idiot (or anything that can be done better) - please write to me/open PR/open an issue.
- - Thanks - Many of the code is inspired by helm and helm-2to-3 plugin (some of the I used as a "base" code that I changed, sometimes with no relation to the resulted method)
+ - Thanks - Many of the code is inspired by helm, helm-2to-3 plugin and helm-edit plugin (some of the I used as a "base" code that I changed, sometimes with no relation to the resulted method)
 
  I will be glad to get any PRs/Issues/Comments

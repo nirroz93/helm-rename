@@ -1,0 +1,7 @@
+commands:
+- name: rename
+  flags:
+  - dry-run
+  - migrate-secrets
+  - migrate-resources
+  - "yes"

@@ -135,8 +135,11 @@ func (renameOptions *RenameOptions) Rename() error {
 		}
 	}
 	if renameOptions.MigrateSecrets {
-		log.Printf("Renaming secrets ##########TODO.\n")
-		MigrateReleases(*renameOptions)
+		log.Printf("Renaming releases (release Secret objects).\n")
+		err := MigrateReleases(*renameOptions)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -148,8 +151,14 @@ func MigrateReleases(renameOptions RenameOptions) error {
 		return err
 	}
 	for _, releaseObject := range allReleases {
-		CreateRelease(renameOptions, releaseObject)
-		DeleteRelease(renameOptions, releaseObject)
+		err = CreateRelease(renameOptions, releaseObject)
+		if err != nil {
+			return err
+		}
+		err = DeleteRelease(renameOptions, releaseObject)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -197,7 +206,10 @@ func setOwnerAnnotationVisitor(renameOptions RenameOptions) resource.VisitorFunc
 		if err != nil {
 			return errors.Wrapf(err, "cannot patch %q with kind %s", info.Name, info.Mapping.GroupVersionKind.Kind)
 		}
-		info.Refresh(obj, true)
+		err = info.Refresh(obj, true)
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 }
