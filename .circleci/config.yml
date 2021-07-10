@@ -65,7 +65,9 @@ jobs:
     working_directory: /go/src/github.com/nirroz93/helm-rename
     steps:
       - checkout
-      - run: curl -sL https://raw.githubusercontent.com/goreleaser/get/master/get | VERSION=v0.170.0 bash
+      - run: 
+          no_output_timeout: 30m
+          command: curl -sL https://raw.githubusercontent.com/goreleaser/get/master/get | VERSION=v0.170.0 bash
 workflows:
   version: 2
   untagged-build:
