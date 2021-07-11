@@ -5,7 +5,7 @@ description: |-
   rename a release.
 ignoreFlags: false
 useTunnel: true
-command: "$HELM_PLUGIN_DIR/helm-rename"
+command: "$HELM_PLUGIN_DIR/bin/rename"
 hooks:
   install: "cd $HELM_PLUGIN_DIR; scripts/install_plugin.sh"
   update: "cd $HELM_PLUGIN_DIR; scripts/install_plugin.sh"

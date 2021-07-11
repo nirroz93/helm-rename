@@ -44,9 +44,9 @@ jobs:
       - attach_workspace:
           at: /tmp/go
       - run: |
-          mkdir -p $HOME/.local/share/helm/plugins/helm-rename
+          mkdir -p $HOME/.local/share/helm/plugins/helm-rename/bin
           cp plugin.yaml $HOME/.local/share/helm/plugins/helm-rename/
-          cp /tmp/go/bin/helm-rename $HOME/.local/share/helm/plugins/helm-rename/helm-rename
+          cp /tmp/go/bin/helm-rename $HOME/.local/share/helm/plugins/helm-rename/bin/rename
 
       - run:
           no_output_timeout: 30m
